@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Embedded Reader</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+
+      #sentence {
+        position: relative;
+      }
+
+      #custom-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        /* Allows clicks to pass through to the YouTube player */
+      }
+
+      .subtitle {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        font-size: 18px;
+        color: white;
+      }
+
+      #current-subtitle {
+        position: absolute;
+        top: 50%;
+        left: 70%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        color: black;
+        text-align: left;
+      }
+
+      /* Adjust the positioning of the file input */
+      #txtInput {
+        position: absolute;
+        top: 0px;
+        /* Move it outside the visible area */
+        left: 700px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #txtInputButton {
+        position: absolute;
+        top: 0 px;
+        /* Move it outside the visible area */
+        left: 900px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      /* Adjust the positioning of the file input */
+      #dictInput {
+        position: absolute;
+        top: 150px;
+        /* Move it outside the visible area */
+        left: 700px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #dictInputButton {
+        position: absolute;
+        top: 150px;
+        /* Move it outside the visible area */
+        left: 900px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #reviewsInput {
+        position: absolute;
+        top: 60px;
+        /* Move it outside the visible area */
+        left: 700px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      /* Style for the box containing the full SRT script */
+      #full-script-box {
+        position: absolute;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: large;
+        top: 550px;
+        left: 320px;
+        transform: translate(-50%, -50%);
+        width: 640px;
+        height: 300px;
+        overflow-y: scroll;
+        /* Enable vertical scrolling */
+        /* border: 1px solid #ccc; */
+        padding: 10px;
+        /* background-color: #f9f9f9; */
+      }
+
+      #idInput {
+        position: absolute;
+        top: 30px;
+        /* Move it outside the visible area */
+        left: 700px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #submitButton {
+        position: absolute;
+        top: 30px;
+        /* Move it outside the visible area */
+        left: 700px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #reviewsInputButton {
+        position: absolute;
+        top: 60px;
+        /* Move it outside the visible area */
+        left: 900px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #importFile {
+        position: absolute;
+        top: 90px;
+        left: 700px;
+      }
+
+      #importButton {
+        position: absolute;
+        top: 90px;
+        /* Move it outside the visible area */
+        left: 900px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #exportButton {
+        position: absolute;
+        top: 90px;
+        /* Move it outside the visible area */
+        left: 1050px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #exportFlashcardsButton {
+        position: absolute;
+        top: 120px;
+        /* Move it outside the visible area */
+        left: 800px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #processAllButton {
+        position: absolute;
+        top: 120px;
+        /* Move it outside the visible area */
+        left: 700px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #folderInput {
+        position: absolute;
+        top: 120px;
+        /* Move it outside the visible area */
+        left: 1000px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #arrayList {
+        padding: 5%;
+      }
+
+      .wordList-container {
+        position: absolute;
+        display: grid;
+        /* Change this value as per your requirement */
+        gap: 2px;
+        top: 200px;
+        left: 700px;
+        size: 200px, 500px;
+        max-height: 500px;
+        overflow-y: scroll;
+      }
+
+      .card-container {
+        display: grid; /* Use grid layout for card container */
+        grid-template-columns: 0.2fr 0.3fr 0.7fr 0.1fr 0.1fr 0.05fr 0.05fr;
+        gap: 8px;
+        width: 650px;
+      }
+
+      .wordList-item {
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: #ffffff;
+        /* background-color: #f0f0f0; */
+        padding: 2px;
+        border: 0px solid #ccc; /* none for now */
+        font-size: medium;
+        width: 100%;
+      }
+
+      .card-container.dragged {
+        opacity: 0.5; /* Reduce opacity of dragged row */
+      }
+
+      .card-container.over {
+        border: 2px dashed blue; /* Add dashed border to indicate drop target */
+      }
+
+      .translation {
+        position: absolute;
+        left: 50%;
+        bottom: 100%; /* Align the bottom edge with the top edge of the parent */
+        transform: translate(-50%);
+        font-size: small;
+        height: 20px;
+        width: 60px;
+        /* outline: none; */
+        border: none;
+        white-space: pre-wrap;
+        display: inline-block;
+        /* background-color: rgba(
+          255,
+          255,
+          255,
+          0.8
+        ); Adjust background color and opacity */
+        padding: 2px 5px;
+        border-radius: 3px;
+        text-align: center;
+      }
+      /* 
+      .close-button {
+        background-color: transparent;
+        border: none;
+        color: red;
+        cursor: pointer;
+        font-size: 1rem;
+        position: absolute;
+        top: 5px;
+        right: 5px;
+      } */
+    </style>
+  </head>
+
+  <body>
+    <input type="file" id="txtInput" accept=".srt" />
+    <!-- <button id="txtInputButton" onclick="processScript()">Process script</button> -->
+
+    <input
+      type="text"
+      id="idInput"
+      value="3Hv-hYbOU6c"
+      placeholder="Enter YouTube ID"
+    />
+    <!-- <button id="submitButton" onclick="loadVideo()">Load Video</button> -->
+
+    <input type="file" id="reviewsInput" accept=".json" />
+    <button id="reviewsInputButton" onclick="processJSON(id)">
+      Process Reviews
+    </button>
+
+    <input type="file" id="dictInput" accept=".json" />
+    <button id="dictInputButton" onclick="processJSON(id)">
+      Process Dictionary
+    </button>
+
+    <input type="file" id="importFile" accept=".json" />
+    <button id="importButton" onclick="importKnownWords()">
+      Import Known Words
+    </button>
+
+    <button id="exportButton" onclick="exportKnownWords()">
+      Export Known Words
+    </button>
+
+    <button id="exportFlashcardsButton" onclick="exportToCSV()">
+      Export as Flashcards
+    </button>
+
+    <input type="file" id="folderInput" webkitdirectory directory multiple />
+
+    <button id="processAllButton" onclick="processAll()">Process All</button>
+
+    <div id="output"></div>
+
+    <div id="player"></div>
+    <div id="custom-overlay">
+      <div class="subtitle" id="custom-subtitle"></div>
+    </div>
+    <!-- <div id="current-subtitle"></div> -->
+
+    <div id="full-script-box">
+      <div id="arrayList">
+        <!-- List items will be added here dynamically -->
+      </div>
+    </div>
+
+    <div class="wordList-container" id="wordListContainer">
+      <!-- Initial rows will be added here -->
+    </div>
+
+    <script>
+      var videoId = ""; // Replace with your actual YouTube video ID ycjz6mnJutg, eM7OU0M5dqQ, wZ-aOWA24c4, 6W3kXEGy_GQ
+      var player;
+      var subtitles = "";
+      var script = [];
+      var reviewsData = {};
+      var dictData = {};
+      var knownLemmas = new Set(["muset", "být", "ten", "já", "tenhle"]);
+      var AKeyPressed = false; // Flag to track if 'a' key is pressed
+      var SKeyPressed = false;
+      var DKeyPressed = false;
+      var WKeyPressed = false;
+      let aBuffer = true;
+      let sBuffer = true;
+      let dBuffer = true;
+      let wBuffer = true;
+      var earlyBuffer = 0; // Play subtitle line 0.5 seconds before actual time
+      var hoveredWordDiv = null;
+      var zIndex = 1;
+      // Define highlight colors
+      const highlightColor = "#ffba9f"; // Light Salmon
+      const colorStaleNew = "#77c9ff"; // Blue
+      const colorFairlyNew = "#aef"; // Sky Blue
+      const colorBrandNew = "#c2f76c"; // Light Green
+      const white = "#ffffff";
+      const lightGray = "#e0e0e0";
+      const darkGray = "c3c3c3";
+
+      function loadVideo() {
+        videoId = document.getElementById("idInput").value;
+        loadYouTubeAPI();
+      }
+
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player("player", {
+          height: "390",
+          width: "640",
+          videoId: videoId,
+          playerVars: {
+            autoplay: 1,
+            controls: 1,
+            showinfo: 0,
+            rel: 0,
+            modestbranding: 1,
+          },
+          events: {
+            onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange,
+          },
+        });
+      }
+
+      function onPlayerReady(event) {
+        console.log("Player is ready.");
+        // event.target.playVideo();
+      }
+
+      var currentSubtitleId = 0; // Variable to store the current subtitle
+
+      function onPlayerStateChange(event) {
+        if (event.data == YT.PlayerState.PLAYING) {
+          setInterval(function () {
+            var currentTime = player.getCurrentTime();
+            var newSubtitleId = updateSubtitles(subtitles, currentTime);
+            // console.log("newId: " + newSubtitleId);
+
+            // Check if the subtitle has changed
+            if (newSubtitleId !== currentSubtitleId && newSubtitleId !== null) {
+              // console.log("changed subtitles");
+              currentSubtitleId = newSubtitleId; // Update current subtitle
+              // Scroll to current subtitle
+              // console.log("changed subtitle to: " + currentSubtitle);
+              scrollToMatchingElement();
+            }
+            console.log(AKeyPressed);
+          }, 100);
+        }
+      }
+
+      function processAll() {
+        processJSON("dictInputButton");
+        processScript();
+        processJSON("reviewsInputButton");
+        importKnownWords();
+      }
+
+      function loadCustomSubtitles(subtitles) {
+        window.subtitles = subtitles;
+        // console.log(subtitles);
+        createScript(subtitles);
+        fillBoxWithArray();
+      }
+
+      function processJSON(name) {
+        console.log(name);
+        let fileInput;
+
+        // Get the file input element
+        if (name === "reviewsInputButton") {
+          // the ID is the button name (the button is what calls the function)
+          fileInput = document.getElementById("reviewsInput");
+        } else {
+          // console.log('dict data')
+          fileInput = document.getElementById("dictInput");
+        }
+
+        // Check if a file was selected
+        if (fileInput.files.length === 0) {
+          // alert("Please select a reviews file.");
+          return;
+        }
+
+        // Get the selected file
+        const file = fileInput.files[0];
+
+        // Create a FileReader object to read the file
+        const reader = new FileReader();
+
+        // Define a callback function to handle file reading completion
+        reader.onload = function (event) {
+          const jsonData = event.target.result; // JSON data as string
+          parsedData = JSON.parse(jsonData); // Parse JSON data
+          if (name === "reviewsInputButton") {
+            reviewsData = parsedData;
+            highlightImportedWords();
+          } else {
+            // console.log('dict data')
+            dictData = parsedData;
+            highlightImportedWords();
+          }
+
+          // Work with the JSON data here
+          console.log(parsedData); // Output the parsed JSON data to the console
+
+          // Example: Displaying data in HTML
+          // const outputDiv = document.getElementById('output');
+          // outputDiv.innerHTML = JSON.stringify(parsedData, null, 2); // Display data in a readable format
+        };
+
+        // Read the file as text
+        reader.readAsText(file);
+      }
+
+      function processScript() {
+        // Get the file input element
+        const fileInput = document.getElementById("txtInput");
+
+        // Check if a file was selected
+        if (fileInput.files.length === 0) {
+          alert("Please select an srt file.");
+          return;
+        }
+
+        // Get the selected file
+        const file = fileInput.files[0];
+
+        // Create a FileReader object to read the file
+        const reader = new FileReader();
+
+        // Define a callback function to handle file reading completion
+        reader.onload = function (event) {
+          window.subtitles = event.target.result; // JSON data as string
+          loadCustomSubtitles(subtitles);
+
+          // Work with the JSON data here
+          // console.log(parsedData); // Output the parsed JSON data to the console
+        };
+
+        reader.readAsText(file);
+      }
+
+      function updateSubtitles(subtitles, currentTime) {
+        // Find the current subtitle based on the current time
+        var currentSubtitleId = findCurrentSubtitle(subtitles, currentTime);
+
+        // Display the current subtitle in the custom <div>
+        // document.getElementById('custom-subtitle').innerText = script[currentSubtitleId] || '';
+
+        // Display the current subtitle in the <body>
+        // document.getElementById('current-subtitle').innerText = script[currentSubtitleId] || '';
+
+        return currentSubtitleId;
+      }
+
+      function createScript(srtContent) {
+        // Clear the script variable
+        script = [];
+        // Split the SRT content into individual subtitle entries
+        var subtitleEntries = srtContent.split(/\n\s*\n/);
+
+        // Iterate through each subtitle entry
+        for (var i = 0; i < subtitleEntries.length; i++) {
+          var lines = subtitleEntries[i].split("\n");
+          var line = lines.slice(2).join(" ");
+          script.push(line);
+        }
+
+        console.log(script);
+      }
+
+      function findCurrentSubtitle(srtContent, currentTime) {
+        // Split the SRT content into individual subtitle entries
+        var subtitleEntries = srtContent.trim().split(/\n\s*\n/);
+
+        // console.log(subtitleEntries); // Log the subtitle entries to check their structure
+
+        // Iterate through each subtitle entry
+        for (var i = 0; i < subtitleEntries.length; i++) {
+          var lines = subtitleEntries[i].split("\n");
+          // The second line contains the time range, e.g., "00:00:10,000 --> 00:00:15,000"
+          var timeRange = lines[1].split(" --> ");
+
+          // Extract start and end times from the time range and convert to seconds
+          var startTime = convertTimeToSeconds(timeRange[0]);
+          var endTime = convertTimeToSeconds(timeRange[1]);
+
+          // Check if the current time falls within the time range of this subtitle
+          if (currentTime >= startTime && currentTime <= endTime) {
+            // Concatenate all lines except the first two (which contain index and time range)
+            // line = lines.slice(2).join(' ');
+            return i;
+          }
+        }
+        // Return null if no subtitle is found for the current time
+        return null;
+      }
+
+      function findStartTimeOfSubtitle(srtContent, id) {
+        // Split the SRT content into individual subtitle entries
+        var subtitleEntries = srtContent.trim().split(/\n\s*\n/);
+
+        // Iterate through each subtitle entry
+        for (var i = 0; i < subtitleEntries.length; i++) {
+          var lines = subtitleEntries[i].split("\n");
+          // The second line contains the time range, e.g., "00:00:10,000 --> 00:00:15,000"
+          var timeRange = lines[1].split(" --> ");
+
+          // Extract start time from the time range and convert to seconds
+          var startTime = convertTimeToSeconds(timeRange[0]);
+
+          // Check if the subtitle text matches the provided subtitle
+          if (i.toString() === id) {
+            return startTime; // Return the start time if the subtitle matches
+          }
+        }
+        // Return null if the subtitle is not found
+        return null;
+      }
+      function findEndTimeOfSubtitle(srtContent, id) {
+        // Split the SRT content into individual subtitle entries
+        var subtitleEntries = srtContent.trim().split(/\n\s*\n/);
+
+        // Iterate through each subtitle entry
+        for (var i = 0; i < subtitleEntries.length; i++) {
+          var lines = subtitleEntries[i].split("\n");
+
+          // Check if the subtitle entry matches the provided ID
+          if (i.toString() === id) {
+            // Extract the time range from the second line, e.g., "00:00:10,000 --> 00:00:15,000"
+            var timeRange = lines[1].split(" --> ");
+
+            // Extract end time from the time range and convert to seconds
+            var endTime = convertTimeToSeconds(timeRange[1]);
+
+            // Return the end time if the subtitle matches
+            // console.log(endTime);
+            return endTime;
+          }
+        }
+        // Return null if the subtitle is not found
+        return null;
+      }
+
+      // Function to fill the box with array elements
+      function fillBoxWithArray() {
+        var arrayList = document.getElementById("arrayList");
+
+        // Clear any existing list items
+        arrayList.innerHTML = "";
+
+        loadVideo();
+
+        // Iterate over the array and create paragraphs
+        script.forEach(function (sentence, sentenceIndex) {
+          // Split the sentence into words
+          var words = sentence.split(" ");
+
+          // Create a <div> element to wrap the words
+          var sentenceDiv = document.createElement("div");
+          sentenceDiv.id = "sentence";
+          sentenceDiv.style.display = "inline-block";
+          sentenceDiv.style.lineHeight = "3";
+          sentenceDiv.dataset.sentence = sentence;
+
+          // Iterate over the words and create a <div> for each word
+          words.forEach(function (unstrippedWord, index) {
+            // Remove punctuation from the word
+            var strippedWord = unstrippedWord.replace(/[^\p{L}\p{N}]+/gu, "");
+            // If word is empty string, break
+            if (!(strippedWord === "")) {
+              // Create a <div> element for the word
+              var wordDiv = document.createElement("div");
+              wordDiv.style.display = "inline-block";
+              wordDiv.style.position = "relative";
+              wordDiv.style.lineHeight = "1";
+              wordDiv.id = sentenceIndex;
+
+              // Get start time from parent
+              wordDiv.dataset.startTime = sentenceDiv.dataset.startTime;
+
+              var word = strippedWord;
+              var lemma = getLemma(word);
+              var shortDef = getDefinitionFromLemma(lemma);
+              var sameAsForm = false;
+              // console.log(unstrippedWord);
+              // console.log(word);
+
+              wordDiv.dataset.shortDef = shortDef;
+
+              // Initialize highlight color
+              if (reviewsData.hasOwnProperty(word)) {
+                const review = reviewsData[word];
+                console.log(review);
+                if (review["days_ago"] < 7) {
+                  wordDiv.style.backgroundColor = colorBrandNew;
+                } else if (review["days_ago"] < 21) {
+                  wordDiv.style.backgroundColor = colorFairlyNew;
+                } else if (review["days_ago"] < 60) {
+                  wordDiv.style.backgroundColor = colorStaleNew;
+                } else {
+                  wordDiv.style.backgroundColor = white;
+                }
+              } else {
+                wordDiv.style.backgroundColor = white;
+              }
+
+              // Create a new span element
+              const translationElement = document.createElement("input");
+
+              // Set display
+              if (knownLemmas.has(lemma) || knownLemmas.has(word)) {
+                translationElement.style.display = "none";
+              }
+
+              // Add event listener for the click event
+              translationElement.addEventListener("click", function () {
+                // Increase zIndex by 1
+                zIndex++;
+                // Set the updated z-index value
+                this.style.zIndex = zIndex;
+              });
+
+              // Set attributes or content for the span element if needed
+              translationElement.classList.add("translation");
+              if (shortDef) {
+                if (shortDef?.substring(0, 3) === "to ") {
+                  // Remove the first three characters (i.e., "to ")
+                  translationElement.value = shortDef.substring(3);
+                } else {
+                  translationElement.value = shortDef;
+                }
+              } else {
+                translationElement.value = "—";
+              }
+
+              function getWidthOfInput() {
+                var tmp = document.createElement("span");
+                tmp.className = "input-element tmp-element";
+                tmp.innerHTML = translationElement.value
+                  .replace(/&/g, "&amp;")
+                  .replace(/</g, "&lt;")
+                  .replace(/>/g, "&gt;");
+                document.body.appendChild(tmp);
+                var theWidth = tmp.getBoundingClientRect().width;
+                document.body.removeChild(tmp);
+                return theWidth;
+              }
+
+              function adjustWidthOfInput() {
+                translationElement.style.width = getWidthOfInput() + "px";
+              }
+
+              adjustWidthOfInput();
+              translationElement.onkeyup = adjustWidthOfInput;
+
+              // Function to get lemma
+              function getLemma(word) {
+                var original_word = word;
+                var lemmaForm = findFormFromWord(original_word);
+                if (lemmaForm) {
+                  if (word === lemmaForm) {
+                    sameAsForm = true;
+                    return lemmaForm;
+                  } else {
+                    while (!(original_word === lemmaForm)) {
+                      original_word = lemmaForm;
+                      lemmaForm = findFormFromWord(lemmaForm);
+                    }
+                    return lemmaForm;
+                  }
+                }
+                return undefined;
+              }
+
+              function findFormFromWord(word) {
+                // Try original case
+                var parsedInfo = dictData?.[word];
+                if (
+                  parsedInfo &&
+                  "form_of" in parsedInfo &&
+                  Array.isArray(parsedInfo["form_of"]) &&
+                  parsedInfo["form_of"].length > 0
+                ) {
+                  return parsedInfo["form_of"][0];
+                }
+
+                // Try lowercase first character
+                parsedInfo =
+                  dictData?.[word.charAt(0).toLowerCase() + word.slice(1)];
+                if (
+                  parsedInfo &&
+                  "form_of" in parsedInfo &&
+                  Array.isArray(parsedInfo["form_of"]) &&
+                  parsedInfo["form_of"].length > 0
+                ) {
+                  return parsedInfo["form_of"][0];
+                }
+
+                // Try uppercase first character
+                parsedInfo =
+                  dictData?.[word.charAt(0).toUpperCase() + word.slice(1)];
+                if (
+                  parsedInfo &&
+                  "form_of" in parsedInfo &&
+                  Array.isArray(parsedInfo["form_of"]) &&
+                  parsedInfo["form_of"].length > 0
+                ) {
+                  return parsedInfo["form_of"][0];
+                }
+
+                return undefined;
+              }
+
+              // Check if lemma exists in dictData
+              function getDefinitionFromLemma(lemma) {
+                var getDefinitionFrom =
+                  dictData[lemma]?.["info"]?.[0]?.["get_definition_from"];
+                // console.log("GDF: " + getDefinitionFrom);
+                if (lemma in dictData) {
+                  var shortDefinitions =
+                    dictData[lemma]?.["info"]?.[0]?.["short_definitions"];
+                  if (shortDefinitions === "") {
+                    shortDefinitions =
+                      dictData[getDefinitionFrom]?.["info"]?.[0]?.[
+                        "short_definitions"
+                      ];
+                  }
+                  if (shortDefinitions && shortDefinitions.length > 0) {
+                    return shortDefinitions[0];
+                  } else {
+                    // console.log("No short definitions found for lemma:", lemma);
+                  }
+                } else {
+                  // console.log("Lemma not found in dictData:", lemma);
+                }
+                return undefined;
+              }
+
+              // First set coloring of review words
+              if (reviewsData.hasOwnProperty(word)) {
+                const review = reviewsData[word];
+                console.log(review);
+                if (review["days_ago"] < 7) {
+                  wordDiv.style.backgroundColor = colorBrandNew;
+                } else if (review["days_ago"] < 21) {
+                  wordDiv.style.backgroundColor = colorFairlyNew;
+                } else if (review["days_ago"] < 60) {
+                  wordDiv.style.backgroundColor = colorStaleNew;
+                } else {
+                  wordDiv.style.backgroundColor = white;
+                }
+                console.log(wordDiv.style.backgroundColor);
+              }
+              // Then, set coloring of known words
+              if (!knownLemmas.has(lemma)) {
+                wordDiv.style.backgroundColor = lightGray;
+              }
+
+              // console.log("sd" + shortDef);
+              // console.log(wordDiv.dataset.shortDef);
+
+              // get previous words
+              let prev_sentence = "";
+              let prev_index = index;
+              let first_word_as_end = false;
+              if (
+                words[prev_index][words[prev_index].length - 1] === "." ||
+                words[prev_index][words[prev_index].length - 1] === "?" ||
+                words[prev_index][words[prev_index].length - 1] === "!"
+              ) {
+                prev_sentence = words[prev_index] + " " + prev_sentence;
+                prev_index--;
+                first_word_as_end = true;
+              }
+              while (
+                prev_index >= 0 &&
+                words[prev_index][words[prev_index].length - 1] !== "." &&
+                words[prev_index][words[prev_index].length - 1] !== "?" &&
+                words[prev_index][words[prev_index].length - 1] !== "!"
+              ) {
+                // console.log(words[prev_index][words[prev_index].length - 1]);
+                prev_sentence = words[prev_index] + " " + prev_sentence;
+                prev_index--;
+              }
+              // get next words
+              let next_sentence = "";
+              if (!first_word_as_end) {
+                let next_index = index + 1;
+                while (
+                  next_index < words.length &&
+                  words[next_index][words[next_index].length - 1] !== "." &&
+                  words[next_index][words[next_index].length - 1] !== "?" &&
+                  words[next_index][words[next_index].length - 1] !== "!"
+                ) {
+                  next_sentence += " " + words[next_index];
+                  next_index++;
+                }
+                if (words[next_index]) {
+                  next_sentence += " " + words[next_index];
+                }
+              }
+
+              sentence = prev_sentence + next_sentence;
+              sentence = sentence.trim().replace(/\s{2,}/g, " ");
+
+              wordDiv.dataset.sentence = sentence.replace(
+                // new RegExp('\\b'+word+'\\b', "gi"),
+                new RegExp(`(?<!\\w)${word}(?!\\w)`, "gi"),
+                "<b>" + word + "</b>"
+              );
+              // If the word has a lemma, assign 'word' to that. Otherwise just send the word itself
+              if (lemma) {
+                word = lemma;
+              }
+              wordDiv.dataset.word = word;
+
+              // Create a text node for the word
+              var wordTextNode = document.createTextNode(unstrippedWord);
+
+              // Append the text node to the <div> element
+              wordDiv.appendChild(wordTextNode);
+              wordDiv.appendChild(translationElement);
+
+              // Set up onclick event for scrolling and seeking
+              wordDiv.onclick = function () {
+                var focusedElement = document.activeElement;
+                if (!(focusedElement && focusedElement.tagName === "INPUT")) {
+                  scrollToElement(this);
+                }
+                player.seekTo(findStartTimeOfSubtitle(subtitles, this.id));
+              };
+
+              let mouseOverWordDiv = false; // Flag to track mouse over wordDiv
+
+              wordDiv.onmouseover = function (event) {
+                // This function will be called when the mouse hovers over the wordDiv
+                mouseOverWordDiv = true; // Set mouse over wordDiv flag
+              };
+
+              wordDiv.onmouseleave = function (event) {
+                // This function will be called when the mouse leaves the wordDiv
+                mouseOverWordDiv = false; // Reset mouse over wordDiv flag
+              };
+
+              var currentlyHovered = false;
+
+              // Add an event listener for when the mouse enters the element
+              wordDiv.addEventListener("mouseenter", function () {
+                currentlyHovered = true;
+              });
+
+              // Add an event listener for when the mouse enters the element
+              wordDiv.addEventListener("mouseleave", function () {
+                currentlyHovered = false;
+              });
+
+              // Function to continuously check the hover state
+              function checkHoverState() {
+                if (currentlyHovered) {
+                  if (AKeyPressed && aBuffer) {
+                    addHoveredWord();
+                  }
+                  if (SKeyPressed && sBuffer) {
+                    saveHoveredWord();
+                  }
+                  if (DKeyPressed && dBuffer) {
+                    return;
+                    // deleteHoveredWord();
+                  }
+                  if (WKeyPressed && wBuffer) {
+                    writeHoveredWord();
+                  }
+                }
+              }
+
+              // Call the checkHoverState function every 30 milliseconds (adjust the interval as needed)
+              setInterval(checkHoverState, 30);
+
+              function addHoveredWord() {
+                aBuffer = false;
+                knownLemmas.delete(lemma);
+                knownLemmas.delete(word);
+                updateHighlightColor(
+                  wordDiv.dataset.word,
+                  lemma,
+                  highlightColor
+                );
+                addToWordList(
+                  wordDiv.dataset.word,
+                  wordDiv.dataset.sentence,
+                  findStartTimeOfSubtitle(subtitles, wordDiv.id),
+                  findEndTimeOfSubtitle(subtitles, wordDiv.id),
+                  wordDiv.dataset.shortDef
+                );
+                // console.log(...knownLemmas);
+                var translation = wordDiv.querySelector(".translation");
+                // Make translation visible
+                if (
+                  translation.style.display === "none" ||
+                  translation.style.display === ""
+                ) {
+                  translation.style.display = "inline-block";
+                }
+              }
+
+              function saveHoveredWord() {
+                var focusedElement = document.activeElement;
+                if (!(focusedElement && focusedElement.tagName === "INPUT")) {
+                  sBuffer = false;
+                  if (lemma) {
+                    knownLemmas.add(lemma);
+                  } else if (word) {
+                    knownLemmas.add(word);
+                  }
+                  updateHighlightColor(wordDiv.dataset.word, lemma, white);
+                  var translation = wordDiv.querySelector(".translation");
+                  // Make translation invisible
+                  translation.style.display = "none";
+                }
+              }
+
+              function writeHoveredWord() {
+                // toggle show/hide translation
+
+                // Check if an input field is currently focused (being edited)
+                var focusedElement = document.activeElement;
+                if (!(focusedElement && focusedElement.tagName === "INPUT")) {
+                  wBuffer = false;
+                  var translation = wordDiv.querySelector(".translation");
+                  // Toggle the visibility of the translation
+                  if (translation.style.display === "none") {
+                    translation.style.display = "inline-block";
+                  } else {
+                    translation.style.display = "none";
+                  }
+                }
+              }
+
+              // Append the <div> element for the word to the sentenceDiv
+              sentenceDiv.appendChild(wordDiv);
+
+              // Append a space after each word except for the last word
+              if (index < words.length - 1) {
+                var spaceTextNode = document.createTextNode(" ");
+                sentenceDiv.appendChild(spaceTextNode);
+              }
+            }
+          });
+
+          // Append the sentenceDiv to the arrayList
+          arrayList.appendChild(sentenceDiv);
+
+          // Append a break after each sentence
+          arrayList.appendChild(document.createElement("br"));
+        });
+      }
+
+      document.addEventListener("keydown", function (event) {
+        // This function will be called when any key is pressed on the keyboard
+        // Check if the 'a' key is pressed (remove from knownLemmas)
+        if (event.key === "a") {
+          AKeyPressed = true;
+        }
+        if (event.key === "s") {
+          SKeyPressed = true;
+        }
+        // Check if the 'd' key is pressed
+        if (event.key.toString() === "d") {
+          DKeyPressed = true;
+        }
+        if (event.key.toString() === "w") {
+          WKeyPressed = true;
+        }
+      });
+
+      document.addEventListener("keyup", function (event) {
+        // Check if the released key is 'a'
+        if (event.key.toString() === "a") {
+          // Reset the 'a' key pressed flag when the 'a' key is released
+          AKeyPressed = false;
+          aBuffer = true;
+        }
+        // Check if the released key is 's'
+        if (event.key.toString() === "s") {
+          // Reset the 's' key pressed flag when the 's' key is released
+          SKeyPressed = false;
+          sBuffer = true;
+        }
+        // Check if the released key is 'd'
+        if (event.key.toString() === "d") {
+          // Reset the 'd' key pressed flag when the 'd' key is released
+          DKeyPressed = false;
+          dBuffer = true;
+        }
+        // Check if the released key is 'w'
+        if (event.key.toString() === "w") {
+          // Reset the 'w' key pressed flag when the 'w' key is released
+          WKeyPressed = false;
+          wBuffer = true;
+        }
+      });
+
+      function updateHighlightColor(word, lemma, default_color) { // TODO: pass in the wordDiv itself, AND type. So that when type is "s", then hide translation.  
+        console.log("updated highlight color");
+        // Get all word divs
+        // const wordDivs = document.querySelectorAll("#sentence div");
+        var arrayList = document.getElementById("arrayList");
+        var sentenceDivs = arrayList.children;
+
+        for (var i = 0; i < sentenceDivs.length; i++) {
+          var sentenceDiv = sentenceDivs[i];
+          if (sentenceDiv.id === "sentence") {
+            var sentence = sentenceDiv.dataset.sentence;
+            // Loop through the word divs
+            for (let i = 0; i < sentenceDiv.children.length; i++) {
+              const wordDiv = sentenceDiv.children[i];
+              const divWord = wordDiv.dataset.word;
+
+              // Check if the word matches
+              if (divWord === word || divWord === lemma) {
+                if (reviewsData.hasOwnProperty(word)) {
+                  const review = reviewsData[word];
+                  console.log(review);
+                  if (review["days_ago"] < 7) {
+                    wordDiv.style.backgroundColor = colorBrandNew;
+                  } else if (review["days_ago"] < 21) {
+                    wordDiv.style.backgroundColor = colorFairlyNew;
+                  } else if (review["days_ago"] < 60) {
+                    wordDiv.style.backgroundColor = colorStaleNew;
+                  } else {
+                    wordDiv.style.backgroundColor = white;
+                  }
+                  console.log(wordDiv.style.backgroundColor);
+                } else {
+                  wordDiv.style.backgroundColor = default_color; // HIDE TRANSLATION HERE
+                }
+              }
+            }
+            // console.log(sentence);
+          }
+        }
+      }
+
+      function addToWordList(word, sentence, startTime, endTime, shortDef) {
+        console.log("stt: " + startTime);
+        console.log("ent: " + endTime);
+
+        // Append the new row to the grid container
+        const gridContainer = document.getElementById("wordListContainer");
+
+        // Create a card container for the fields
+        var cardContainer = document.createElement("div");
+        cardContainer.classList.add("card-container");
+
+        cardContainer.dataset.word = word;
+        cardContainer.dataset.sentence = sentence;
+        cardContainer.dataset.startTime = startTime;
+        cardContainer.dataset.endTime = endTime;
+        cardContainer.dataset.shortDef = shortDef;
+
+        // Create a new row element
+        var newRow = document.createElement("input");
+        // newRow.style.width = "100px";
+        newRow.type = "text";
+        newRow.classList.add("wordList-item");
+        newRow.value = word; // Set initial value as the word
+        cardContainer.appendChild(newRow);
+
+        // Create an input element for the text field
+        var textField = document.createElement("input");
+        // textField.style.width = "220px";
+        textField.type = "text";
+        textField.classList.add("wordList-item");
+        textField.value = shortDef; // Set initial value as the shortDef
+        cardContainer.appendChild(textField);
+
+        // Create an input element for the sentence field
+        var sentenceField = document.createElement("input");
+        sentenceField.type = "text";
+        sentenceField.classList.add("wordList-item");
+        sentenceField.value = sentence; // Set initial value as the shortDef
+        sentenceField.style.overflowY = "scroll";
+        cardContainer.appendChild(sentenceField);
+
+        // // Add timestamp view
+        // var timestampField = document.createElement("div");
+        // timestampField.textContent = convertTimeToMinutes(startTime); // Set textContent here
+        // timestampField.classList.add("wordList-item");
+        // gridContainer.appendChild(timestampField);
+
+        // Create an input element for the text field
+        var timestampField = document.createElement("input");
+        // timestampField.style.width = "60px";
+        timestampField.type = "text";
+        timestampField.classList.add("wordList-item");
+        timestampField.value = convertTimeToMinutes(startTime); // Set initial value as the startTime in minutes
+        cardContainer.appendChild(timestampField);
+
+        // Create an input element for the text field
+        var endField = document.createElement("input");
+        // endField.style.width = "60px";
+        endField.type = "text";
+        endField.classList.add("wordList-item");
+        endField.value = convertTimeToMinutes(endTime); // Set initial value as the endTime in minutes
+        cardContainer.appendChild(endField);
+
+        // Add onclick functionality to seek to the start time when clicked
+        timestampField.onclick = function () {
+          player.seekTo(parseFloat(startTime));
+        };
+
+        // Add event listener to word input
+        newRow.addEventListener("input", function () {
+          // Update word dataset attribute
+          newRow.dataset.word = newRow.value;
+          // Log the updated word value
+          // console.log("Updated Word:", newRow.dataset.word);
+        });
+
+        // Add event listener to definition input
+        textField.addEventListener("input", function () {
+          // Update shortDef dataset attribute
+          newRow.dataset.shortDef = textField.value;
+          // Log the updated definition value
+          // console.log("Updated Short Definition:", newRow.dataset.shortDef);
+        });
+
+        // Add event listener to startTime input
+        timestampField.addEventListener("input", function () {
+          // Update startTime dataset attribute
+          newRow.dataset.startTime = convertMinutesToSeconds(
+            timestampField.value
+          );
+          // Log the updated startTime value
+          // console.log("Updated Start Time:", newRow.dataset.startTime);
+        });
+
+        // Add event listener to endTime input
+        endField.addEventListener("input", function () {
+          // Update endTime dataset attribute
+          newRow.dataset.endTime = convertMinutesToSeconds(endField.value);
+          // Log the updated endTime value
+          // console.log("Updated End Time:", newRow.dataset.endTime);
+        });
+
+        // Create a close button
+        var closeButton = document.createElement("button");
+        closeButton.innerHTML = "X";
+        closeButton.classList.add("close-button");
+        closeButton.addEventListener("click", function () {
+          cardContainer.remove();
+          knownLemmas.delete(word);
+          updateHighlightColor(word, lemma, darkGray);
+        });
+        cardContainer.appendChild(closeButton);
+
+        // Create a drag button
+        var dragElement = document.createElement("div");
+        dragElement.innerHTML = "=";
+        dragElement.classList.add("drag-element");
+        cardContainer.appendChild(dragElement);
+        dragElement.draggable = true; // Enable dragging
+        gridContainer.appendChild(cardContainer);
+
+        const grid = document.getElementById("wordListContainer");
+        const rows = grid.querySelectorAll("div");
+
+        let dragStartIndex;
+
+        rows.forEach((row, index) => {
+          row.addEventListener("dragenter", function () {
+            this.classList.add("over");
+          });
+
+          row.addEventListener("dragleave", function () {
+            this.classList.remove("over");
+          });
+
+          row.addEventListener("dragstart", function () {
+            dragStartIndex = index;
+            console.log(dragStartIndex);
+          });
+
+          row.addEventListener("dragover", function (e) {
+            e.preventDefault();
+          });
+
+          row.addEventListener("drop", function () {
+            const dragEndIndex = index;
+            console.log(dragEndIndex);
+            if (index !== -1) {
+              swapRows(dragStartIndex, dragEndIndex);
+            } else {
+              swapRows(dragStartIndex, dragEndIndex);
+            }
+            this.classList.remove("over");
+          });
+        });
+
+        function swapRows(start, end) {
+          const draggedRow = rows[start];
+          const dropRow = rows[end];
+          gridContainer.insertBefore(draggedRow, dropRow.nextSibling);
+        }
+
+        newRow.scrollIntoView();
+      }
+
+      function convertTimeToMinutes(durationInSeconds) {
+        // Calculate minutes and seconds
+        var minutes = Math.floor(durationInSeconds / 60);
+        var seconds = Math.floor(durationInSeconds % 60);
+
+        // Format minutes and seconds
+        var formattedMinutes = minutes < 10 ? "0" + minutes : minutes;
+        var formattedSeconds = seconds < 10 ? "0" + seconds : seconds;
+
+        // Return formatted time
+        return formattedMinutes + ":" + formattedSeconds;
+      }
+
+      function convertMinutesToSeconds(timeString) {
+        // Split the time string into minutes and seconds
+        var parts = timeString.split(":");
+
+        // Convert minutes and seconds to seconds
+        var minutes = parseFloat(parts[0], 10);
+        var seconds = parseFloat(parts[1], 10);
+
+        // Calculate total seconds
+        var totalSeconds = minutes * 60 + seconds;
+
+        return totalSeconds;
+      }
+
+      // Function to scroll to the selected element
+      function scrollToElement(element) {
+        // Get the position of the selected element relative to the scrolling box
+        var elementPosition = element.offsetTop;
+
+        // Scroll the box to the position of the clicked element
+        document.getElementById("full-script-box").scrollTop = elementPosition;
+      }
+
+      function scrollToMatchingElement() {
+        // Concatenate all lines except the first two (which contain index and time range)
+        // var line = subtitle.split('\n').slice(2).join(' ');
+
+        // Loop through each list item and check if it matches the current subtitle
+        var arrayList = document
+          .getElementById("arrayList")
+          .querySelectorAll("#sentence");
+        for (var i = 0; i < arrayList.length; i++) {
+          if (i === currentSubtitleId) {
+            // If a match is found, scroll to that list item
+            scrollToElement(arrayList[i]);
+            break; // Exit the loop once the match is found
+          }
+        }
+      }
+
+      // Function to convert SRT time format (HH:MM:SS,SSS) to seconds
+      function convertTimeToSeconds(time) {
+        var parts = time.split(/[:,]/); // Split by colon or comma
+        var hours = parseInt(parts[0]);
+        var minutes = parseInt(parts[1]);
+        var seconds = parseInt(parts[2]);
+        var milliseconds = parseInt(parts[3]);
+        return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+      }
+
+      function exportToCSV() {
+        // Define the CSV header
+        let csvContent = "sentence,word,definition,start_time,end_time\n";
+
+        // Get the word list container
+        const wordListContainer = document.getElementById("wordListContainer");
+
+        // Iterate through the child elements of the word list container
+        for (let i = 0; i < wordListContainer.children.length; i++) {
+          const word = wordListContainer.children[i].getAttribute("data-word");
+          const definition = wordListContainer.children[i].dataset.shortDef; // TODO: make all the other wordListContainer.children[i] like this, and test to make sure they work
+          const sentence =
+            wordListContainer.children[i].getAttribute("data-sentence");
+          const startTime = parseFloat(
+            wordListContainer.children[i].getAttribute("data-start-time")
+          );
+          const endTime = parseFloat(
+            wordListContainer.children[i].getAttribute("data-end-time")
+          );
+
+          // Extract information from each item
+          // let sentence = wordDiv.dataset.sentence;
+          // let word = wordDiv.dataset.word;
+          // let definition = definitionInput.value; // Assuming the definition is entered by the user in the input field
+          // let startTime = parseFloat(wordDiv.dataset.startTime);
+          // let endTime = parseFloat(wordDiv.dataset.endTime); // Assuming the timestamp is directly in the text content
+
+          if (definition === undefined) {
+            definition = "";
+          }
+
+          // Append the extracted information to the CSV content
+          csvContent += `"${sentence}","${word}","${definition}",${startTime},${endTime}\n`;
+        }
+
+        // Create a Blob from the CSV content
+        const blob = new Blob([csvContent], {
+          type: "text/csv;charset=utf-8;",
+        });
+
+        // Create a download link for the Blob
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "input.csv";
+
+        // Trigger the download
+        document.body.appendChild(a);
+        a.click();
+
+        // Clean up
+        document.body.removeChild(a);
+      }
+
+      // Call the exportToCSV function when needed, e.g., on button click
+      // Example:
+      // document.getElementById("exportButton").addEventListener("click", exportToCSV);
+
+      function exportKnownWords() {
+        // Convert the knownWords Set to an array
+        const knownWordsArray = Array.from(knownLemmas);
+
+        // Convert the array to JSON
+        const knownWordsJSON = JSON.stringify(knownWordsArray, null, 2);
+
+        // Create a Blob from the JSON data
+        const blob = new Blob([knownWordsJSON], { type: "application/json" });
+
+        // Create a download link for the Blob
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "knownWords.json";
+        document.body.appendChild(a);
+
+        // Click the link to trigger the download
+        a.click();
+
+        // Remove the download link from the DOM
+        document.body.removeChild(a);
+      }
+
+      function importKnownWords() {
+        // Get the input element
+        const input = document.getElementById("importFile");
+
+        // (ignore if no file selected)
+        // Check if a file was selected
+        if (input.files.length === 0) {
+          //   alert("Please select a JSON file.");
+          return;
+        }
+
+        // Get the selected file
+        const file = input.files[0];
+
+        // Create a FileReader object to read the file
+        const reader = new FileReader();
+
+        // Define a callback function to handle file reading completion
+        reader.onload = function (event) {
+          // Parse the JSON data
+          const jsonContent = event.target.result;
+          const importedWords = JSON.parse(jsonContent);
+
+          // Update the knownLemmas set with the imported words
+          importedWords.forEach((word) => {
+            knownLemmas.add(word);
+          });
+
+          // Update the highlighting of words in the script
+          // highlightImportedWords();
+
+          // Optionally, you can perform any additional actions after importing the words
+          // console.log("Imported knownWords:", importedWords);
+          // console.log("Updated knownLemmas:", Array.from(knownLemmas));
+        };
+
+        // Read the file as text
+        reader.readAsText(file);
+      }
+
+      function highlightImportedWords() {
+        // Get all word divs
+        // console.log("highlight here");
+        var arrayList = document.getElementById("arrayList");
+        var sentenceDivs = arrayList.children;
+
+        for (var i = 0; i < sentenceDivs.length; i++) {
+          var sentenceDiv = sentenceDivs[i];
+          if (sentenceDiv.id === "sentence") {
+            var sentence = sentenceDiv.dataset.sentence;
+            // Do something with the sentence data, such as printing it to the console
+            // console.log(sentence);
+          }
+        }
+
+        // const wordDivs = document.querySelectorAll("#sentence div");
+      }
+
+      function loadYouTubeAPI() {
+        // Dynamically create a new script tag to load the YouTube API
+        var tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName("script")[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      }
+    </script>
+  </body>
+</html>
