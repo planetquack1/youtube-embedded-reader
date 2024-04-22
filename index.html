@@ -93,11 +93,11 @@
         position: absolute;
         font-family: Arial, Helvetica, sans-serif;
         font-size: large;
-        top: 550px;
+        top: 650px;
         left: 320px;
         transform: translate(-50%, -50%);
         width: 640px;
-        height: 300px;
+        height: 500px;
         overflow-y: scroll;
         /* Enable vertical scrolling */
         /* border: 1px solid #ccc; */
@@ -110,6 +110,14 @@
         top: 30px;
         /* Move it outside the visible area */
         left: 700px;
+        /* Move it 1000 pixels to the right */
+      }
+
+      #loadVideoButton {
+        position: absolute;
+        top: 30px;
+        /* Move it outside the visible area */
+        left: 900px;
         /* Move it 1000 pixels to the right */
       }
 
@@ -338,7 +346,8 @@
       value="3Hv-hYbOU6c"
       placeholder="Enter YouTube ID"
     />
-    <!-- <button id="submitButton" onclick="loadVideo()">Load Video</button> -->
+
+    <button id="loadVideoButton" onclick="loadVideo()">Load Video</button>
 
     <input type="file" id="reviewsInput" accept=".json" />
     <button id="reviewsInputButton" onclick="processJSON(id)">
@@ -365,7 +374,7 @@
 
     <input type="file" id="folderInput" webkitdirectory directory multiple />
 
-    <button id="processAllButton" onclick="processAll()">Process All</button>
+    <button id="processAllButton" onclick="processAll()">Process Files</button>
 
     <div id="output"></div>
 
@@ -686,9 +695,10 @@
         // Clear any existing list items
         arrayList.innerHTML = "";
 
-        loadVideo();
+        // loadVideo();
 
         // Iterate over the array and create paragraphs
+        // setInterval(processNextSentence, 500);
         script.forEach(function (sentence, sentenceIndex) {
           // Split the sentence into words
           var words = sentence.split(" ");
@@ -734,7 +744,14 @@
               fetchDictionary(word)
                 .then((data) => {
                   dictionaryEntry = data;
-                  console.log(data); // Log the fetched data
+
+                  try {
+                    lemma = data["translate"][0]["head"]["entr"];
+                  } catch (error) {
+                    lemma = data["short"][0]["entr"];
+                  }
+                  wordDiv.dataset.lemma = lemma;
+                  // console.log(data); // Log the fetched data
 
                   try {
                     var sens = data["translate"][0]["grps"][0]["sens"];
@@ -743,7 +760,7 @@
                       var trans = sens[sen]["trans"];
                       for (tran in trans) {
                         var translationList = trans[tran];
-                        console.log(translationList);
+                        // console.log(translationList);
                         // Remove the first item in translationList
                         if (translationList[0].includes("<")) {
                           translationList = translationList.slice(1);
@@ -751,14 +768,14 @@
 
                         // Create a regular expression pattern with the strings separated by |
                         var pattern =
-                          /\b(co|čemu|koho|kde|kam|kdy|o|čem|čeho|sbd|sb|sth)\b/;
+                          /\b(co|čemu|čím|koho|kde|kam|kdy|o|čem|čeho|sbd|sb|sth)\b/;
 
                         for (wordIndex in translationList) {
                           // console.log(translationList[wordIndex]);
                           translationList[wordIndex] = translationList[
                             wordIndex
                           ].replace(
-                            /<span class='c'>|<span class='d'>|<span class='v'>|<span class='w'>|<span class='y'>|<span class="no_translation">|<span class=\"no_translation\">|<\/span>|čeho|/g,
+                            /<span class='c'>|<span class='d'>|<span class='v'>|<span class='w'>|<span class='y'>|<span class="no_translation">|<span class=\"no_translation\">|<\/span>|čeho/g,
                             ""
                           );
                           // console.log(translationList[wordIndex]);
@@ -774,7 +791,7 @@
                           // console.log(translationList[wordIndex]);
                         }
 
-                        var sentence = translationList.join("");
+                        var sentence = translationList.join(" ");
                         // console.log("sentence" + sentence);
 
                         // Split sentence at first instance of AmE
@@ -782,29 +799,30 @@
 
                         // Replace unnecessary parts
                         sentence = sentence.replace(
-                          /"<span class='c'>|<span class='v'>|<span class='w'>|<span class='y'>|<span class="no_translation">|<\/span>/g,
+                          /"<span class='c'>|<span class='v'>|<span class='w'>|<span class='y'>|<span class="no_translation">|<\/span>|čeho/g,
                           ""
                         );
-                        sentence = sentence.replace(/</g, "");
+                        sentence = sentence.replace(/<|\*/g, "");
                         // Replace any text in parenteses
                         sentence = sentence.replace(/\(.*?\)/g, "");
+                        // console.log(sentence);
                         // Split sentence at first comma or slash
                         sentence = sentence.split(/,|\//)[0];
+                        // console.log(sentence);
                         sentence = sentence.trim();
                         let hasDefinition = false;
-                        
+
                         for (sen of sensList) {
                           word = sen[0];
-                          console.log("word" + word);
-                          console.log("sentence" + sentence);
+                          // console.log("word" + word);
+                          // console.log("sentence" + sentence);
                           if (word === sentence) {
                             hasDefinition = true;
                           }
                         }
                         if (!hasDefinition) {
-                          console.log(sentence);
+                          // console.log(sentence);
                           sense.push(sentence);
-                          
                         }
                       }
                       if (sense.length > 0) {
@@ -823,10 +841,10 @@
                     //   sensList.push(sense);
                     // }
                   } catch (error) {
-                    console.log("SHORT");
+                    // console.log("SHORT");
                     var trans = data["short"];
 
-                    console.log(trans);
+                    // console.log(trans);
 
                     // var sense = [];
 
@@ -843,7 +861,7 @@
                           sensList.push([sentence.trim()]);
                         }
                       }
-                      console.log([sentence.trim()]);
+                      // console.log([sentence.trim()]);
                     }
 
                     translationElement.value = sensList[0][0];
@@ -851,6 +869,8 @@
                       translationElement.value = "—";
                     }
                     adjustWidthOfInput();
+
+                    
 
                     // sense = [sense];
                     // console.log(sense);
@@ -861,6 +881,33 @@
                     // Split sentence at first instance of AmE
                     // sentence = sentence.split(/AmE/)[1];
                   }
+                  // Set coloring of known words
+                  if (knownLemmas.has(lemma) || knownLemmas.has(word)) {
+                      wordDiv.style.backgroundColor = white;
+                      translationElement.style.display = "none";
+                    } else {
+                      // First set coloring of review words
+                      if (reviewsData.hasOwnProperty(lemma) || reviewsData.hasOwnProperty(word)) {
+                        // console.log("HAS REVIEW");
+                        const review = reviewsData[lemma];
+                        if (!review) {
+                          review = reviewsData[word];
+                        }
+                        // console.log(review);
+                        if (review["days_ago"] < 7) {
+                          wordDiv.style.backgroundColor = colorBrandNew;
+                        } else if (review["days_ago"] < 21) {
+                          wordDiv.style.backgroundColor = colorFairlyNew;
+                        } else if (review["days_ago"] < 60) {
+                          wordDiv.style.backgroundColor = colorStaleNew;
+                        } else {
+                          wordDiv.style.backgroundColor = lightGray;
+                        }
+                      } else {
+                        // console.log("NO REVIEW");
+                        wordDiv.style.backgroundColor = lightGray;
+                      }
+                    }
 
                   // sensList.add([sensList]);
                   // console.log([sensList]);
@@ -869,69 +916,47 @@
                   // Handle any errors that occurred during the fetch operation
                   console.error("Error fetching dictionary:", error);
                 });
-              fetchDictionary(word) // TODO: repeated twice in project
-                .then((data) => {
-                  try {
-                    lemma = data["translate"][0]["head"]["entr"];
-                  } catch (error) {
-                    lemma = data["short"][0]["entr"];
-                  }
-                  console.log(lemma);
+              // fetchDictionary(word) // TODO: repeated twice in project
+              //   .then((data) => {
+              //     try {
+              //       lemma = data["translate"][0]["head"]["entr"];
+              //     } catch (error) {
+              //       lemma = data["short"][0]["entr"];
+              //     }
+              //     console.log(lemma);
 
-                  wordDiv.dataset.lemma = lemma;
+              //     wordDiv.dataset.lemma = lemma;
 
-                  // Set coloring of known words
-                  if (knownLemmas.has(lemma) || knownLemmas.has(word)) {
-                    wordDiv.style.backgroundColor = white;
-                    translationElement.style.display = "none";
-                  } else {
-                    // First set coloring of review words
-                    if (reviewsData.hasOwnProperty(word)) {
-                      const review = reviewsData[word];
-                      console.log(review);
-                      if (review["days_ago"] < 7) {
-                        wordDiv.style.backgroundColor = colorBrandNew;
-                      } else if (review["days_ago"] < 21) {
-                        wordDiv.style.backgroundColor = colorFairlyNew;
-                      } else if (review["days_ago"] < 60) {
-                        wordDiv.style.backgroundColor = colorStaleNew;
-                      } else {
-                        wordDiv.style.backgroundColor = lightGray;
-                      }
-                    } else {
-                      wordDiv.style.backgroundColor = lightGray;
-                    }
-                  }
-                })
-                .catch((error) => {
-                  // Handle any errors that occurred during the fetch operation
+              //   })
+              //   .catch((error) => {
+              //     // Handle any errors that occurred during the fetch operation
 
-                  // Set coloring of known words
-                  if (knownLemmas.has(word)) {
-                    wordDiv.style.backgroundColor = white;
-                    translationElement.style.display = "none";
-                  } else {
-                    // First set coloring of review words
-                    if (reviewsData.hasOwnProperty(word)) {
-                      const review = reviewsData[word];
-                      console.log(review);
-                      if (review["days_ago"] < 7) {
-                        wordDiv.style.backgroundColor = colorBrandNew;
-                      } else if (review["days_ago"] < 21) {
-                        wordDiv.style.backgroundColor = colorFairlyNew;
-                      } else if (review["days_ago"] < 60) {
-                        wordDiv.style.backgroundColor = colorStaleNew;
-                      } else {
-                        wordDiv.style.backgroundColor = lightGray;
-                      }
-                    } else {
-                      wordDiv.style.backgroundColor = lightGray;
-                    }
-                  }
+              //     // Set coloring of known words
+              //     if (knownLemmas.has(word)) {
+              //       wordDiv.style.backgroundColor = white;
+              //       translationElement.style.display = "none";
+              //     } else {
+              //       // First set coloring of review words
+              //       if (reviewsData.hasOwnProperty(word)) {
+              //         const review = reviewsData[word];
+              //         console.log(review);
+              //         if (review["days_ago"] < 7) {
+              //           wordDiv.style.backgroundColor = colorBrandNew;
+              //         } else if (review["days_ago"] < 21) {
+              //           wordDiv.style.backgroundColor = colorFairlyNew;
+              //         } else if (review["days_ago"] < 60) {
+              //           wordDiv.style.backgroundColor = colorStaleNew;
+              //         } else {
+              //           wordDiv.style.backgroundColor = lightGray;
+              //         }
+              //       } else {
+              //         wordDiv.style.backgroundColor = lightGray;
+              //       }
+              //     }
 
-                  console.error("Error fetching dictionary:", error);
-                  throw error;
-                });
+              //     console.error("Error fetching dictionary:", error);
+              //     throw error;
+              //   });
 
               // TRANSLATION BOX
 
